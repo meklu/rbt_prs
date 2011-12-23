@@ -2,9 +2,12 @@
   /// copyleft 2011 meklu (public domain)
   // This tries to check whether a URL should be accessed
   // or not.
+  // The latest version should be available at
+  //   http://meklu.webege.com/code/rbt_prs.php.bz2
   // Just pass the url (and user agent, if you'd like) to the function.
   // If an argument is NULL, its default value will be used.
   function isUrlBotSafe($url, $your_useragent = "meklu::isUrlBotSafe", $debug = FALSE) {
+    define("RBT_PRS_VER", "1.0");
     if($your_useragent === NULL) $your_useragent = "meklu::isUrlBotSafe";
     if($debug === NULL) $debug = FALSE;
 
@@ -13,6 +16,7 @@
       ini_set('display_errors', true);
       ini_set('html_errors', false);
       echo "PHP version: " . phpversion() . "\n";
+      echo "rbt_prs version: " . RBT_PRS_VER . "\n";
     }
     $original_ua=ini_get("user_agent");
     ini_set("user_agent", $your_useragent);
@@ -91,14 +95,15 @@
       	if(strlen($value) > 1) {
 	  if(substr_count($value, '?') == 0) {
 	    if(preg_match("#\w$#", $value))
-	      $value=preg_replace("#$#", "/", $value);
+	      $value=$value . "/";
 	  } else {
-	    if(substr_count($value, "/?") > 0) {
-	      $value=str_replace("/?", "/index\\.\w+?", $value);
-	    }
 	    $value=str_replace("?", "\\?", $value);
+	    if(substr_count($value, "/\\?") > 0) {
+	      $value=str_replace("/\\?", "/index\\.\w+\\?", $value);
+	    }
 	  }
 	}
+	$value=str_replace(".", "\\.", $value);
 	$rules[$current_agent][$value]=TRUE;
 	unset($rule, $key, $value);
 	continue;
@@ -107,14 +112,15 @@
       	if(strlen($value) > 1) {
 	  if(substr_count($value, '?') == 0) {
 	    if(preg_match("#\w$#", $value))
-	      $value=preg_replace("#$#", "/", $value);
+	      $value=$value . "/";
 	  } else {
-	    if(substr_count($value, "/?") > 0) {
-	      $value=str_replace("/?", "/index\\.\w+?", $value);
-	    }
 	    $value=str_replace("?", "\\?", $value);
+	    if(substr_count($value, "/\\?") > 0) {
+	      $value=str_replace("/\\?", "/index\\.\w+\\?", $value);
+	    }
 	  }
 	}
+	$value=str_replace(".", "\\.", $value);
 	$rules[$current_agent][$value]=FALSE;
 	unset($rule, $key, $value);
 	continue;

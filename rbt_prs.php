@@ -7,7 +7,7 @@
   // Just pass the url (and user agent, if you'd like) to the function.
   // If an argument is NULL, its default value will be used.
   function isUrlBotSafe($url, $your_useragent = "meklu::isUrlBotSafe", $debug = FALSE) {
-    define("RBT_PRS_VER", "1.0");
+    define("RBT_PRS_VER", "1.0.1");
     if($your_useragent === NULL) $your_useragent = "meklu::isUrlBotSafe";
     if($debug === NULL) $debug = FALSE;
 
@@ -18,9 +18,13 @@
       echo "PHP version: " . phpversion() . "\n";
       echo "rbt_prs version: " . RBT_PRS_VER . "\n";
     }
+    // storing the current ua
     $original_ua=ini_get("user_agent");
+    // switching to the given ua
     ini_set("user_agent", $your_useragent);
+    // slicing up the given url
     $tmp=parse_url($url);
+    // start re-assembling it
     $baseurl=$tmp["scheme"] . "://";
     if(isset($tmp["user"])) {
       $baseurl=$baseurl . $tmp["user"] . ":";
@@ -42,10 +46,12 @@
     if(isset($tmp["query"])) {
       $checkedpath=$checkedpath . "?" . $tmp["query"];
     }
+    // re-assembling the url is finished
+    // do a bit of magic on the checked path
     if(strlen($checkedpath) > 1) {
       if(substr_count($checkedpath, '?') == 0) {
 	if(preg_match("#\w$#", $checkedpath))
-	  $checkedpath=preg_replace("#$#", "/", $checkedpath);
+	  $checkedpath=$checkedpath . "/";
       } elseif(substr_count($checkedpath, "/?") > 0) {
 	$checkedpath=str_replace("/?", "/index.stuff?", $checkedpath);
       }
@@ -69,58 +75,81 @@
 	return TRUE;
       }
       // so far so good!
-      // fixing some newlines
+      // fixing some newlines and removing comments on top of which we're
+      // escaping a few characters
       // i.e. making all carriage returns newlines and removing duplicates
       //      and trimming the result
       $raw=str_replace("\r", "\n", $raw);
+      // remove the comments
+      $raw=preg_replace(":(#).*:", "", $raw);
+      // first the backslashes
+      $raw=str_replace("\\", "\\\\", $raw);
+      // then the rest
+      $raw=str_replace(".", "\\.", $raw);
+      $raw=str_replace("?", "\\?", $raw);
+      // remove duplicate newlines
       $raw=preg_replace("#\n+#", "\n", $raw);
+      // trim that
       $raw=trim($raw);
     }
+    // explode the lines into an array
     $lines=explode("\n", $raw);
+    // initialise our multi-dimensional rule array
     $rules=array("*" => array(
 			  "/" => TRUE
 			)
 		);
+    // set current user agent to NULL
+    // this means that lines before the first declaration of a user agent will
+    // be ignored
     $current_agent=NULL;
+    // process the lines individually
     foreach($lines as &$line) {
+      // explode our lines into two segments
       $rule=explode(":", $line, 2);
-      $key=trim($rule[0]);
-      $value=trim($rule[1]);
+      // check if we had enough elements
+      // this makes us silently ignore invalid entries
+      if(count($rule) == 2) {
+	$key=trim($rule[0]);
+	$value=trim($rule[1]);
+      } else {
+	unset($rule);
+	continue;
+      }
+      // is it a user agent?
       if(strcasecmp($key, "user-agent") == 0) {
 	$current_agent=$value;
 	unset($rule, $key, $value);
 	continue;
       }
+      // is it an allow?
       if(strcasecmp($key, "allow") == 0 && $current_agent !== NULL) {
       	if(strlen($value) > 1) {
 	  if(substr_count($value, '?') == 0) {
 	    if(preg_match("#\w$#", $value))
 	      $value=$value . "/";
 	  } else {
-	    $value=str_replace("?", "\\?", $value);
 	    if(substr_count($value, "/\\?") > 0) {
 	      $value=str_replace("/\\?", "/index\\.\w+\\?", $value);
 	    }
 	  }
 	}
-	$value=str_replace(".", "\\.", $value);
 	$rules[$current_agent][$value]=TRUE;
 	unset($rule, $key, $value);
 	continue;
       }
+      // is it a disallow?
       if(strcasecmp($key, "disallow") == 0 && $current_agent !== NULL) {
       	if(strlen($value) > 1) {
 	  if(substr_count($value, '?') == 0) {
 	    if(preg_match("#\w$#", $value))
 	      $value=$value . "/";
 	  } else {
-	    $value=str_replace("?", "\\?", $value);
 	    if(substr_count($value, "/\\?") > 0) {
 	      $value=str_replace("/\\?", "/index\\.\w+\\?", $value);
 	    }
 	  }
 	}
-	$value=str_replace(".", "\\.", $value);
 	$rules[$current_agent][$value]=FALSE;
 	unset($rule, $key, $value);
 	continue;
@@ -128,7 +157,10 @@
     }
     unset($line);
     unset($current_agent);
+    // let's see if we have a match
+    // $state is TRUE by default because why not
     $state=TRUE;
+    // first checking universal rules
     if(isset($rules["*"])) {
       if(isset($rules["*"]["/"]))
 	$state=$rules["*"]["/"];
@@ -139,6 +171,7 @@
 	}
       }
     }
+    // checking rules specific to your user agent
     if(isset($rules[$your_useragent])) {
       if(isset($rules[$your_useragent]["/"]))
 	$state=$rules[$your_useragent]["/"];

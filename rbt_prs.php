@@ -9,7 +9,7 @@
   define("RBT_PRS_VER_MAJOR", "1");
   define("RBT_PRS_VER_MINOR", "0");
   define("RBT_PRS_VER_PATCHLEVEL", "2");
-  define("RBT_PRS_BRANCH", "master");
+  define("RBT_PRS_BRANCH", "testing");
   define("RBT_PRS_VER", RBT_PRS_VER_MAJOR . "." . RBT_PRS_VER_MINOR . "." .
 	  RBT_PRS_VER_PATCHLEVEL . "-" . RBT_PRS_BRANCH);
   function isUrlBotSafe($url, $your_useragent = "meklu::isUrlBotSafe",

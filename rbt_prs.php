@@ -8,7 +8,7 @@
   // If an argument is NULL, its default value will be used.
   define("RBT_PRS_VER_MAJOR", "1");
   define("RBT_PRS_VER_MINOR", "0");
-  define("RBT_PRS_VER_PATCHLEVEL", "2");
+  define("RBT_PRS_VER_PATCHLEVEL", "3");
   define("RBT_PRS_BRANCH", "testing");
   define("RBT_PRS_VER", RBT_PRS_VER_MAJOR . "." . RBT_PRS_VER_MINOR . "." .
 	  RBT_PRS_VER_PATCHLEVEL . "-" . RBT_PRS_BRANCH);
@@ -126,6 +126,8 @@
       if(strcasecmp($key, "user-agent") == 0) {
 	$current_agent=$value;
 	unset($rule, $key, $value);
+	if($debug === TRUE)
+	  echo "User agent match.\n";
 	continue;
       }
       // is it an allow?
@@ -142,6 +144,8 @@
 	}
 	$rules[$current_agent][$value]=TRUE;
 	unset($rule, $key, $value);
+	if($debug === TRUE)
+	  echo "Allow match.\n";
 	continue;
       }
       // is it a disallow?
@@ -158,8 +162,12 @@
 	}
 	$rules[$current_agent][$value]=FALSE;
 	unset($rule, $key, $value);
+	if($debug === TRUE)
+	  echo "Disallow match.\n";
 	continue;
       }
+      if($debug === TRUE)
+	echo "No match.\n";
     }
     unset($line);
     unset($current_agent);

@@ -119,15 +119,16 @@
 	$key=trim($rule[0]);
 	$value=trim($rule[1]);
       } else {
+	echo "Less than two pieces of rule.\n";
 	unset($rule);
 	continue;
       }
       // is it a user agent?
       if(strcasecmp($key, "user-agent") == 0) {
 	$current_agent=$value;
-	unset($rule, $key, $value);
 	if($debug === TRUE)
-	  echo "User agent match.\n";
+	  echo "User agent match.\n\t\"" . $value . "\"\n";
+	unset($rule, $key, $value);
 	continue;
       }
       // is it an allow?
@@ -143,9 +144,9 @@
 	  }
 	}
 	$rules[$current_agent][$value]=TRUE;
-	unset($rule, $key, $value);
 	if($debug === TRUE)
-	  echo "Allow match.\n";
+	  echo "Allow match.\n\t\"" . $value . "\"\n";
+	unset($rule, $key, $value);
 	continue;
       }
       // is it a disallow?
@@ -161,13 +162,14 @@
 	  }
 	}
 	$rules[$current_agent][$value]=FALSE;
-	unset($rule, $key, $value);
 	if($debug === TRUE)
-	  echo "Disallow match.\n";
+	  echo "Disallow match.\n\t\"" . $value . "\"\n";
+	unset($rule, $key, $value);
 	continue;
       }
       if($debug === TRUE)
-	echo "No match.\n";
+	echo "No match.\n\t\"" . $key . ": " . $value . "\"\n";
+      unset($rule, $key, $value);
     }
     unset($line);
     unset($current_agent);
@@ -206,6 +208,12 @@
       var_dump($raw);
       echo "\$rules:\n";
       var_dump($rules);
+      echo "The URL is ";
+      if($state === TRUE) {
+	echo "safe.\n";
+      } else {
+	echo "unsafe.\n";
+      }
     }
     ini_set("user_agent", $original_ua);
     return $state;

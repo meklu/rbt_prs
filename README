@@ -1,0 +1,11 @@
+rbt_prs is a robots.txt parser written in PHP and intended for checking
+whether or not your bot can access a given URL.
+
+Currently it provides just one function:
+	isUrlBotSafe($url, $your_useragent, $debug)
+Setting either of the latter two parameters to NULL will make them use their
+default values.
+
+This piece of software is already in use in real life at
+http://cheesetalks.twolofbees.com/humble/ and was originally written for the
+site author just because it was the correct way of doing things.

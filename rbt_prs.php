@@ -1,15 +1,17 @@
 <?php
-  /// copyleft 2011 meklu (public domain)
+  /// copyleft 2012 meklu (public domain)
   // This tries to check whether a URL should be accessed
   // or not.
   // The latest version should be available at
   //   http://meklu.webege.com/code/rbt_prs.php.bz2
+  // or alternatively at
+  //   https://github.com/meklu/rbt_prs
   // Just pass the url (and user agent, if you'd like) to the function.
   // If an argument is NULL, its default value will be used.
   define("RBT_PRS_VER_MAJOR", "1");
   define("RBT_PRS_VER_MINOR", "0");
   define("RBT_PRS_VER_PATCHLEVEL", "3");
-  define("RBT_PRS_BRANCH", "testing");
+  define("RBT_PRS_BRANCH", "master");
   define("RBT_PRS_VER", RBT_PRS_VER_MAJOR . "." . RBT_PRS_VER_MINOR . "." .
 	  RBT_PRS_VER_PATCHLEVEL . "-" . RBT_PRS_BRANCH);
   function isUrlBotSafe($url, $your_useragent = "meklu::isUrlBotSafe",

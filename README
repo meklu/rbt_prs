@@ -1,3 +1,5 @@
+/// copyleft 2012 meklu (public domain)
+
 rbt_prs is a robots.txt parser written in PHP and intended for checking
 whether or not your bot can access a given URL.
 

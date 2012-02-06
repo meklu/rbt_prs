@@ -18,10 +18,10 @@
   define("RBT_PRS_BRANCH", "testing");
   define("RBT_PRS_VER", RBT_PRS_VER_MAJOR . "." . RBT_PRS_VER_MINOR . "." .
 	  RBT_PRS_VER_PATCH . "-" . RBT_PRS_BRANCH);
-  function isUrlBotSafe($url, $your_useragent = "rbt_prs",
-			$robots_txt = NULL, $redirects = FALSE,
-			$debug = FALSE) {
-    if($your_useragent === NULL) $your_useragent = "rbt_prs";
+  define("RBT_PRS_UA", "rbt_prs/" . RBT_PRS_VER . " (https://github.com/meklu/rbt_prs)");
+  function isUrlBotSafe($url, $your_useragent = RBT_PRS_UA, $robots_txt = NULL,
+			$redirects = FALSE, $debug = FALSE) {
+    if($your_useragent === NULL) $your_useragent = RBT_PRS_UA;
     if($debug === NULL) $debug = FALSE;
     if($redirects === NULL) $redirects = FALSE;
 

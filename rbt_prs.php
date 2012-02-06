@@ -33,6 +33,9 @@
       $redirectcontext = stream_context_create($redirectarray);
     }
 
+    if($debug === TRUE)
+      echo "Argument initialisation finished.\n";
+
     if($debug === TRUE) {
       error_reporting(E_ALL);
       ini_set('display_errors', true);
@@ -44,6 +47,8 @@
     $original_ua=ini_get("user_agent");
     // switching to the given ua
     ini_set("user_agent", $your_useragent);
+    if($debug === TRUE)
+      echo "User agent stored and switched.\n";
     // slicing up the given url
     $tmp=parse_url($url);
     // start re-assembling it
@@ -68,6 +73,8 @@
     if(isset($tmp["query"])) {
       $checkedpath=$checkedpath . "?" . $tmp["query"];
     }
+    if($debug === TRUE)
+      echo "URL sliced and re-assembled.\n";
     // re-assembling the url is finished
     // do a bit of magic on the checked path
     if(strlen($checkedpath) > 1) {
@@ -79,21 +86,33 @@
       }
     }
     unset($tmp);
+    if($debug === TRUE)
+      echo "Checked path magic done.\n";
     // checking whether robots.txt can be accessed or not if the user hasn't
     // supplied one.
     if($robots_txt === NULL) {
       if($redirects !== FALSE && is_int($redirects) === TRUE) {
 	if($debug === TRUE && $redirects <= 1)
 	  echo "Warning! Setting \$redirects to 1 or less may break things!\n";
-	$fhandle=@fopen($baseurl . "robots.txt", "rb", FALSE, $redirectcontext);
+	if($debug === TRUE) {
+	  $fhandle=fopen($baseurl . "robots.txt", "rb", FALSE, $redirectcontext);
+	} else {
+	  $fhandle=@fopen($baseurl . "robots.txt", "rb", FALSE, $redirectcontext);
+	}
       } else {
-	$fhandle=@fopen($baseurl . "robots.txt", "rb");
+	if($debug === TRUE) {
+	  $fhandle=fopen($baseurl . "robots.txt", "rb");
+	} else {
+	  $fhandle=@fopen($baseurl . "robots.txt", "rb");
+	}
       }
       if($fhandle === FALSE) {
 	unset($fhandle);
 	ini_set("user_agent", $original_ua);
 	return TRUE;
       } else {
+	if($debug === TRUE)
+	  echo "Obtained file handle.\n";
 	// we were able to download something!
 	$raw=stream_get_contents($fhandle);
 	$orig_raw=$raw;
@@ -102,6 +121,10 @@
 	// check if we ran into an html (error) page.
 	// we're looking for the closing tag because <html foo="bar">
 	if(preg_match("#</html>#i", $raw) > 0) {
+	  if($debug === TRUE) {
+	    echo "Ran into HTML, aborting and returning TRUE...\n";
+	    var_dump($raw);
+	  }
 	  ini_set("user_agent", $original_ua);
 	  return TRUE;
 	}
@@ -110,6 +133,8 @@
       $raw=$robots_txt;
       $orig_raw=$robots_txt;
     }
+    if($debug === TRUE)
+      echo "robots.txt loaded.\n";
     // so far so good!
     // fixing some newlines and removing comments on top of which we're
     // escaping a few characters
@@ -127,6 +152,8 @@
     $raw=preg_replace("#\n+#", "\n", $raw);
     // trim that
     $raw=trim($raw);
+    if($debug === TRUE)
+      echo "robots.txt touched up.\n";
 
     // explode the lines into an array
     $lines=explode("\n", $raw);
@@ -204,6 +231,8 @@
     }
     unset($line);
     unset($current_agent);
+    if($debug === TRUE)
+      echo "Rules parsed.\n";
     // let's see if we have a match
     // $state is TRUE by default because why not
     $state=TRUE;
@@ -218,6 +247,8 @@
 	}
       }
     }
+    if($debug === TRUE)
+      echo "Universal rules checked.\n";
     // checking rules specific to your user agent
     if(isset($rules[$your_useragent])) {
       if(isset($rules[$your_useragent]["/"]))
@@ -230,6 +261,7 @@
       }
     }
     if($debug === TRUE) {
+      echo "Specific rules checked.\n";
       echo "Var dumps...\n";
       echo "\$checkedpath:\n";
       var_dump($checkedpath);

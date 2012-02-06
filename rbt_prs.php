@@ -7,17 +7,31 @@
   // or alternatively at
   //   https://github.com/meklu/rbt_prs
   // Just pass the url (and user agent, if you'd like) to the function.
+  // You can also pass your own robots.txt to it as $robots_txt and set
+  // $redirects to something if you'd like to allow redirects. TRUE will
+  // enable them and use 20 as the value, whereas FALSE disables this. 1 or
+  // less means that none are followed.
   // If an argument is NULL, its default value will be used.
   define("RBT_PRS_VER_MAJOR", "1");
   define("RBT_PRS_VER_MINOR", "0");
-  define("RBT_PRS_VER_PATCHLEVEL", "3");
-  define("RBT_PRS_BRANCH", "master");
+  define("RBT_PRS_VER_PATCH", "4");
+  define("RBT_PRS_BRANCH", "testing");
   define("RBT_PRS_VER", RBT_PRS_VER_MAJOR . "." . RBT_PRS_VER_MINOR . "." .
-	  RBT_PRS_VER_PATCHLEVEL . "-" . RBT_PRS_BRANCH);
-  function isUrlBotSafe($url, $your_useragent = "meklu::isUrlBotSafe",
+	  RBT_PRS_VER_PATCH . "-" . RBT_PRS_BRANCH);
+  function isUrlBotSafe($url, $your_useragent = "rbt_prs",
+			$robots_txt = NULL, $redirects = FALSE,
 			$debug = FALSE) {
-    if($your_useragent === NULL) $your_useragent = "meklu::isUrlBotSafe";
+    if($your_useragent === NULL) $your_useragent = "rbt_prs";
     if($debug === NULL) $debug = FALSE;
+    if($redirects === NULL) $redirects = FALSE;
+
+    if($redirects === TRUE) $redirects = 20;
+    if($redirects !== FALSE && is_int($redirects) === TRUE) {
+      $redirectarray = array('http' => array('method' => 'GET',
+					     'max_redirects' => $redirects)
+			    );
+      $redirectcontext = stream_context_create($redirectarray);
+    }
 
     if($debug === TRUE) {
       error_reporting(E_ALL);
@@ -65,41 +79,55 @@
       }
     }
     unset($tmp);
-    // checking whether robots.txt can be accessed or not.
-    $fhandle=@fopen($baseurl . "robots.txt", "rb");
-    if($fhandle === FALSE) {
-      unset($fhandle);
-      ini_set("user_agent", $original_ua);
-      return TRUE;
-    } else {
-      // we were able to download something!
-      $raw=stream_get_contents($fhandle);
-      fclose($fhandle);
-      unset($fhandle);
-      // check if we ran into an html (error) page.
-      // we're looking for the closing tag because <html foo="bar">
-      if(preg_match("#</html>#i", $raw) > 0) {
+    // checking whether robots.txt can be accessed or not if the user hasn't
+    // supplied one.
+    if($robots_txt === NULL) {
+      if($redirects !== FALSE && is_int($redirects) === TRUE) {
+	if($debug === TRUE && $redirects <= 1)
+	  echo "Warning! Setting \$redirects to 1 or less may break things!\n";
+	$fhandle=@fopen($baseurl . "robots.txt", "rb", FALSE, $redirectcontext);
+      } else {
+	$fhandle=@fopen($baseurl . "robots.txt", "rb");
+      }
+      if($fhandle === FALSE) {
+	unset($fhandle);
 	ini_set("user_agent", $original_ua);
 	return TRUE;
+      } else {
+	// we were able to download something!
+	$raw=stream_get_contents($fhandle);
+	$orig_raw=$raw;
+	fclose($fhandle);
+	unset($fhandle);
+	// check if we ran into an html (error) page.
+	// we're looking for the closing tag because <html foo="bar">
+	if(preg_match("#</html>#i", $raw) > 0) {
+	  ini_set("user_agent", $original_ua);
+	  return TRUE;
+	}
       }
-      // so far so good!
-      // fixing some newlines and removing comments on top of which we're
-      // escaping a few characters
-      // i.e. making all carriage returns newlines and removing duplicates
-      //      and trimming the result
-      $raw=str_replace("\r", "\n", $raw);
-      // remove the comments
-      $raw=preg_replace(":(#).*:", "", $raw);
-      // first the backslashes
-      $raw=str_replace("\\", "\\\\", $raw);
-      // then the rest
-      $raw=str_replace(".", "\\.", $raw);
-      $raw=str_replace("?", "\\?", $raw);
-      // remove duplicate newlines
-      $raw=preg_replace("#\n+#", "\n", $raw);
-      // trim that
-      $raw=trim($raw);
+    } else {
+      $raw=$robots_txt;
+      $orig_raw=$robots_txt;
     }
+    // so far so good!
+    // fixing some newlines and removing comments on top of which we're
+    // escaping a few characters
+    // i.e. making all carriage returns newlines and removing duplicates
+    //      and trimming the result
+    $raw=str_replace("\r", "\n", $raw);
+    // remove the comments
+    $raw=preg_replace(":(#).*:", "", $raw);
+    // first the backslashes
+    $raw=str_replace("\\", "\\\\", $raw);
+    // then the rest
+    $raw=str_replace(".", "\\.", $raw);
+    $raw=str_replace("?", "\\?", $raw);
+    // remove duplicate newlines
+    $raw=preg_replace("#\n+#", "\n", $raw);
+    // trim that
+    $raw=trim($raw);
+
     // explode the lines into an array
     $lines=explode("\n", $raw);
     // initialise our multi-dimensional rule array
@@ -121,7 +149,8 @@
 	$key=trim($rule[0]);
 	$value=trim($rule[1]);
       } else {
-	echo "Less than two pieces of rule.\n";
+	if($debug === TRUE)
+	  echo "Less than two pieces of rule.\n\t\"" . $rule[0] . "\"\n";
 	unset($rule);
 	continue;
       }
@@ -206,8 +235,12 @@
       var_dump($checkedpath);
       echo "\$baseurl:\n";
       var_dump($baseurl);
+      echo "\$redirects:\n";
+      var_dump($redirects);
       echo "\$raw:\n";
       var_dump($raw);
+      echo "\$orig_raw:\n";
+      var_dump($orig_raw);
       echo "\$rules:\n";
       var_dump($rules);
       echo "The URL is ";

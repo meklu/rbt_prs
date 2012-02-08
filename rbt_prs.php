@@ -33,10 +33,8 @@
       $redirectcontext = stream_context_create($redirectarray);
     }
 
-    if($debug === TRUE)
-      echo "Argument initialisation finished.\n";
-
     if($debug === TRUE) {
+      echo "Argument initialisation finished.\n";
       error_reporting(E_ALL);
       ini_set('display_errors', true);
       ini_set('html_errors', false);
@@ -115,7 +113,6 @@
 	  echo "Obtained file handle.\n";
 	// we were able to download something!
 	$raw=stream_get_contents($fhandle);
-	$orig_raw=$raw;
 	fclose($fhandle);
 	unset($fhandle);
 	// check if we ran into an html (error) page.
@@ -131,7 +128,7 @@
       }
     } else {
       $raw=$robots_txt;
-      $orig_raw=$robots_txt;
+      unset($robots_txt);
     }
     if($debug === TRUE)
       echo "robots.txt loaded.\n";
@@ -140,6 +137,7 @@
     // escaping a few characters
     // i.e. making all carriage returns newlines and removing duplicates
     //      and trimming the result
+    $orig_raw=$raw;
     $raw=str_replace("\r", "\n", $raw);
     // remove the comments
     $raw=preg_replace(":(#).*:", "", $raw);
@@ -150,6 +148,8 @@
     $raw=str_replace("?", "\\?", $raw);
     // remove duplicate newlines
     $raw=preg_replace("#\n+#", "\n", $raw);
+    // replace empty disallows with "Allow: /" since some people use that
+    $raw=preg_replace("#^Disallow:(\h)*#im", "Allow: /", $raw);
     // trim that
     $raw=trim($raw);
     if($debug === TRUE)

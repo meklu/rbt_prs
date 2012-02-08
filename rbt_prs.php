@@ -13,12 +13,13 @@
   // less means that none are followed.
   // If an argument is NULL, its default value will be used.
   define("RBT_PRS_VER_MAJOR", "1");
-  define("RBT_PRS_VER_MINOR", "0");
-  define("RBT_PRS_VER_PATCH", "4");
-  define("RBT_PRS_BRANCH", "testing");
+  define("RBT_PRS_VER_MINOR", "1");
+  define("RBT_PRS_VER_PATCH", "0");
+  define("RBT_PRS_BRANCH", "master");
   define("RBT_PRS_VER", RBT_PRS_VER_MAJOR . "." . RBT_PRS_VER_MINOR . "." .
 	  RBT_PRS_VER_PATCH . "-" . RBT_PRS_BRANCH);
-  define("RBT_PRS_UA", "rbt_prs/" . RBT_PRS_VER . " (https://github.com/meklu/rbt_prs)");
+  define("RBT_PRS_UA", "rbt_prs/" . RBT_PRS_VER .
+	 " (https://github.com/meklu/rbt_prs)");
   function isUrlBotSafe($url, $your_useragent = RBT_PRS_UA, $robots_txt = NULL,
 			$redirects = FALSE, $debug = FALSE) {
     if($your_useragent === NULL) $your_useragent = RBT_PRS_UA;
@@ -93,9 +94,11 @@
 	if($debug === TRUE && $redirects <= 1)
 	  echo "Warning! Setting \$redirects to 1 or less may break things!\n";
 	if($debug === TRUE) {
-	  $fhandle=fopen($baseurl . "robots.txt", "rb", FALSE, $redirectcontext);
+	  $fhandle=fopen($baseurl . "robots.txt", "rb", FALSE,
+			 $redirectcontext);
 	} else {
-	  $fhandle=@fopen($baseurl . "robots.txt", "rb", FALSE, $redirectcontext);
+	  $fhandle=@fopen($baseurl . "robots.txt", "rb", FALSE,
+			  $redirectcontext);
 	}
       } else {
 	if($debug === TRUE) {
@@ -250,18 +253,30 @@
     if($debug === TRUE)
       echo "Universal rules checked.\n";
     // checking rules specific to your user agent
-    if(isset($rules[$your_useragent])) {
-      if(isset($rules[$your_useragent]["/"]))
-	$state=$rules[$your_useragent]["/"];
-      reset($rules[$your_useragent]);
-      foreach($rules[$your_useragent] as $key => $value) {
-	if(preg_match("#^" . $key . "#", $checkedpath) > 0) {
-	  $state=$value;
+    // exploding it into product tags while stripping off all extra info inside
+    // brackets
+    $ua_array=explode(" ", trim(preg_replace("# +#", " ",
+		      preg_replace("#\(.*?\)#", "", $your_useragent))));
+    // reversing the array since the first mentioned product tag should be the
+    // most specific (Section 14.43 of RFC 2616)
+    $ua_array=array_reverse($ua_array);
+    foreach($ua_array as $useragent) {
+      $tmp=preg_replace("#/(.*)#", "", $useragent);
+      if(isset($rules[$tmp])) {
+	if(isset($rules[$tmp]["/"]))
+	  $state=$rules[$tmp]["/"];
+	reset($rules[$tmp]);
+	foreach($rules[$tmp] as $key => $value) {
+	  if(preg_match("#^" . $key . "#", $checkedpath) > 0) {
+	    $state=$value;
+	  }
 	}
       }
+      if($debug === TRUE)
+	echo "Specific rules for user agent " . $tmp . " checked.\n";
+      unset($tmp);
     }
     if($debug === TRUE) {
-      echo "Specific rules checked.\n";
       echo "Var dumps...\n";
       echo "\$checkedpath:\n";
       var_dump($checkedpath);
@@ -275,6 +290,10 @@
       var_dump($orig_raw);
       echo "\$rules:\n";
       var_dump($rules);
+      echo "\$your_useragent:\n";
+      var_dump($your_useragent);
+      echo "\$ua_array:\n";
+      var_dump($ua_array);
       echo "The URL is ";
       if($state === TRUE) {
 	echo "safe.\n";

@@ -14,7 +14,7 @@
   // If an argument is NULL, its default value will be used.
   define("RBT_PRS_VER_MAJOR", "1");
   define("RBT_PRS_VER_MINOR", "1");
-  define("RBT_PRS_VER_PATCH", "1");
+  define("RBT_PRS_VER_PATCH", "2");
   define("RBT_PRS_BRANCH", "master");
   define("RBT_PRS_VER", RBT_PRS_VER_MAJOR . "." . RBT_PRS_VER_MINOR . "." .
 	  RBT_PRS_VER_PATCH . "-" . RBT_PRS_BRANCH);
@@ -152,7 +152,7 @@
     // remove duplicate newlines
     $raw=preg_replace("#\n+#", "\n", $raw);
     // replace empty disallows with "Allow: /" since some people use that
-    $raw=preg_replace("#^Disallow:(\h)*$#im", "Allow: /", $raw);
+    $raw=preg_replace("#^Disallow:(\h*)$#im", "Allow: /", $raw);
     // trim that
     $raw=trim($raw);
     if($debug === TRUE)

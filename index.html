@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>rbt_prs by meklu</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>rbt_prs</h1>
+        <p>A robots.txt parser written in PHP, useful for checking whether or not your bot has access to a given URL.</p>
+
+        <p class="view"><a href="https://github.com/meklu/rbt_prs">View the Project on GitHub <small>meklu/rbt_prs</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/meklu/rbt_prs/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/meklu/rbt_prs/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/meklu/rbt_prs">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <p>/// copyleft 2012 meklu (public domain)</p>
+
+<p>rbt_prs is a robots.txt parser written in PHP and intended for checking
+whether or not your bot can access a given URL.</p>
+
+<p>Currently it provides just one function:</p>
+
+<p><code>
+    isUrlBotSafe($url, $your_useragent, $robots_txt, $redirects, $debug)
+</code></p>
+
+<p>Setting any of the last four parameters to NULL will make them use their
+default values.</p>
+
+<p>The first argument, $url, is the only required argument and means the URL you
+would like to check.</p>
+
+<p>The second argument, $your_useragent, is the user agent string your bot will
+use. While it isn't mandatory to select one, it is highly advised. To mention
+this software in your user agent string, you could invoke the function as</p>
+
+<p><code>
+    isUrlBotSafe("http://example.com/", "Fancybot/0.1 (awesome) " .
+             RBT_PRS_UA);
+</code></p>
+
+<p>Notice the space after the description. The constant RBT_PRS_UA doesn't have
+one in it.</p>
+
+<p>The third argument, $robots_txt, is useful when you want to go through several
+URLs with just a single download of robots.txt. It allows you to use your own
+rules on a given URL. You could utilise the argument like this:</p>
+
+<p><code>
+    $myrules = file_get_contents("http://example.com/robots.txt");
+    isUrlBotSafe("http://example.com/", "Fancybot/0.1", $myrules);
+    isUrlBotSafe("http://example.com/contact", "Fancybot/0.1", $myrules);
+    isUrlBotSafe("http://example.com/blog", "Fancybot/0.1", $myrules);
+    isUrlBotSafe("http://example.com/about", "Fancybot/0.1", $myrules);
+</code></p>
+
+<p>The fourth argument, $redirects, is only useful when you let the function
+download the robots.txt. It allows you to handle HTTP redirects in a slightly
+better way than having to miserably fail when grabbing the file.
+Values that are 1 or less will disable redirects, whereas FALSE will leave
+things the way they are. TRUE will set the value to 20. Here's how to use a
+similar approach with $robots_txt defined.</p>
+
+<p><code>
+    $opts = array('http' =&gt; array('method' =&gt; 'GET',
+                      'max_redirects' =&gt; 20)
+             );
+    $context = stream_context_create($opts);
+    $myrules = file_get_contents("http://example.com/robots.txt", FALSE,
+                     $context);
+</code></p>
+
+<p>The fifth argument, $debug, will make the function verbose and have it print
+all sorts of useful analysis on the rules.</p>
+
+<p>This piece of software is already in use in real life at
+<a href="http://cheesetalks.twolofbees.com/humble/">http://cheesetalks.twolofbees.com/humble/</a> and was originally written for the
+site author just because it was the correct way of doing things.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/meklu">meklu</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>

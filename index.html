@@ -81,8 +81,7 @@ similar approach with $robots_txt defined.</p>
                       'max_redirects' =&gt; 20)
              );
     $context = stream_context_create($opts);
-    $myrules = file_get_contents("http://example.com/robots.txt", FALSE,
-                     $context);
+    $myrules = file_get_contents("http://example.com/robots.txt", FALSE, $context);
 </code></p>
 
 <p>The fifth argument, $debug, will make the function verbose and have it print

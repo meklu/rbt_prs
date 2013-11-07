@@ -1,9 +1,9 @@
 <?php
-  /// copyleft 2012 meklu (public domain)
+  /// copyleft 2012-2013 meklu (public domain)
   // This tries to check whether a URL should be accessed
   // or not.
   // The latest version should be available at
-  //   http://meklu.webege.com/code/rbt_prs.php.bz2
+  //   http://meklu.org/code/rbt_prs.php.bz2
   // or alternatively at
   //   https://github.com/meklu/rbt_prs
   // Just pass the url (and user agent, if you'd like) to the function.
@@ -14,8 +14,8 @@
   // If an argument is NULL, its default value will be used.
   define("RBT_PRS_VER_MAJOR", "1");
   define("RBT_PRS_VER_MINOR", "1");
-  define("RBT_PRS_VER_PATCH", "2");
-  define("RBT_PRS_BRANCH", "master");
+  define("RBT_PRS_VER_PATCH", "3");
+  define("RBT_PRS_BRANCH", "testing");
   define("RBT_PRS_VER", RBT_PRS_VER_MAJOR . "." . RBT_PRS_VER_MINOR . "." .
 	  RBT_PRS_VER_PATCH . "-" . RBT_PRS_BRANCH);
   define("RBT_PRS_UA", "rbt_prs/" . RBT_PRS_VER .
@@ -144,11 +144,8 @@
     $raw=str_replace("\r", "\n", $raw);
     // remove the comments
     $raw=preg_replace(":(#).*:", "", $raw);
-    // first the backslashes
-    $raw=str_replace("\\", "\\\\", $raw);
-    // then the rest
-    $raw=str_replace(".", "\\.", $raw);
-    $raw=str_replace("?", "\\?", $raw);
+    // make the thing regex-safe
+    $raw=preg_quote($raw);
     // remove duplicate newlines
     $raw=preg_replace("#\n+#", "\n", $raw);
     // replace empty disallows with "Allow: /" since some people use that
@@ -161,22 +158,29 @@
     // explode the lines into an array
     $lines=explode("\n", $raw);
     // initialise our multi-dimensional rule array
-    $rules=array("*" => array(
-			  "/" => TRUE
-			)
-		);
+    $rules=array(
+      -1 => array(
+	"ua" => array("*"),
+	"rules" => array(
+	  "/" => TRUE
+	)
+      )
+    );
     // set current user agent to NULL
     // this means that lines before the first declaration of a user agent will
     // be ignored
     $current_agent=NULL;
+    $ua_index=-1;
+    $last_is_ua=FALSE;
     // process the lines individually
     foreach($lines as &$line) {
       // explode our lines into two segments
-      $rule=explode(":", $line, 2);
+      // since we did a preg_quote(), we need a backslash here
+      $rule=explode("\\:", $line, 2);
       // check if we had enough elements
       // this makes us silently ignore invalid entries
       if(count($rule) == 2) {
-	$key=trim($rule[0]);
+	$key=stripslashes(trim($rule[0]));
 	$value=trim($rule[1]);
       } else {
 	if($debug === TRUE)
@@ -186,14 +190,29 @@
       }
       // is it a user agent?
       if(strcasecmp($key, "user-agent") == 0) {
-	$current_agent=$value;
+	// initialise ua list
+	if($last_is_ua === FALSE) {
+	  $ua_index+=1;
+	  $rules[$ua_index]=array(
+	    "ua" => array(),
+	    "rules" => array()
+	  );
+	}
+	$current_agent=stripslashes($value);
+	$rules[$ua_index]["ua"][] = $current_agent;
 	if($debug === TRUE)
 	  echo "User agent match.\n\t\"" . $value . "\"\n";
 	unset($rule, $key, $value);
+	$last_is_ua=TRUE;
+	continue;
+      }
+      // skip the line if we have no UA
+      if ($ua_index < 0) {
 	continue;
       }
       // is it an allow?
-      if(strcasecmp($key, "allow") == 0 && $current_agent !== NULL) {
+      if(strcasecmp($key, "allow") == 0) {
+	$last_is_ua=FALSE;
       	if(strlen($value) > 1) {
 	  if(substr_count($value, '?') == 0) {
 	    if(preg_match("#\w$#", $value))
@@ -204,14 +223,15 @@
 	    }
 	  }
 	}
-	$rules[$current_agent][$value]=TRUE;
+	$rules[$ua_index]["rules"][$value]=TRUE;
 	if($debug === TRUE)
 	  echo "Allow match.\n\t\"" . $value . "\"\n";
 	unset($rule, $key, $value);
 	continue;
       }
       // is it a disallow?
-      if(strcasecmp($key, "disallow") == 0 && $current_agent !== NULL) {
+      if(strcasecmp($key, "disallow") == 0) {
+	$last_is_ua=FALSE;
       	if(strlen($value) > 1) {
 	  if(substr_count($value, '?') == 0) {
 	    if(preg_match("#\w$#", $value))
@@ -222,7 +242,7 @@
 	    }
 	  }
 	}
-	$rules[$current_agent][$value]=FALSE;
+	$rules[$ua_index]["rules"][$value]=FALSE;
 	if($debug === TRUE)
 	  echo "Disallow match.\n\t\"" . $value . "\"\n";
 	unset($rule, $key, $value);
@@ -240,11 +260,21 @@
     // $state is TRUE by default because why not
     $state=TRUE;
     // first checking universal rules
-    if(isset($rules["*"])) {
-      if(isset($rules["*"]["/"]))
-	$state=$rules["*"]["/"];
-      reset($rules["*"]);
-      foreach($rules["*"] as $key => $value) {
+    foreach($rules as $rule) {
+      $ua_match=FALSE;
+      foreach($rule["ua"] as $ua) {
+	if(strcmp("*", $ua) === 0) {
+	  $ua_match=TRUE;
+	}
+      }
+      if($ua_match === FALSE) {
+	continue;
+      }
+      if(isset($rule["rules"]["/"])) {
+	$state=$rule["rules"]["/"];
+      }
+      reset($rule["rules"]);
+      foreach($rule["rules"] as $key => $value) {
 	if(preg_match("#^" . $key . "#", $checkedpath) > 0) {
 	  $state=$value;
 	}
@@ -256,17 +286,28 @@
     // exploding it into product tags while stripping off all extra info inside
     // brackets
     $ua_array=explode(" ", trim(preg_replace("# +#", " ",
-		      preg_replace("#\(.*?\)#", "", $your_useragent))));
+		      preg_replace("#\([^(]*?\)#", "", $your_useragent))));
     // reversing the array since the first mentioned product tag should be the
     // most specific (Section 14.43 of RFC 2616)
     $ua_array=array_reverse($ua_array);
     foreach($ua_array as $useragent) {
       $tmp=preg_replace("#/(.*)#", "", $useragent);
-      if(isset($rules[$tmp])) {
-	if(isset($rules[$tmp]["/"]))
-	  $state=$rules[$tmp]["/"];
-	reset($rules[$tmp]);
-	foreach($rules[$tmp] as $key => $value) {
+      foreach($rules as $rule) {
+	$ua_match=FALSE;
+	foreach($rule["ua"] as $ua) {
+	  if(strcmp($tmp, $ua) === 0) {
+	    echo "FUKKYEA\n";
+	    $ua_match=TRUE;
+	  }
+	}
+	if($ua_match === FALSE) {
+	  continue;
+	}
+	if(isset($rule["rules"]["/"])) {
+	  $state=$rule["rules"]["/"];
+	}
+	reset($rule["rules"]);
+	foreach($rule["rules"] as $key => $value) {
 	  if(preg_match("#^" . $key . "#", $checkedpath) > 0) {
 	    $state=$value;
 	  }

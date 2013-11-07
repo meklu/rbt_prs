@@ -296,7 +296,6 @@
 	$ua_match=FALSE;
 	foreach($rule["ua"] as $ua) {
 	  if(strcmp($tmp, $ua) === 0) {
-	    echo "FUKKYEA\n";
 	    $ua_match=TRUE;
 	  }
 	}

@@ -14,7 +14,7 @@
   // If an argument is NULL, its default value will be used.
   define("RBT_PRS_VER_MAJOR", "1");
   define("RBT_PRS_VER_MINOR", "1");
-  define("RBT_PRS_VER_PATCH", "3");
+  define("RBT_PRS_VER_PATCH", "5");
   define("RBT_PRS_BRANCH", "master");
   define("RBT_PRS_VER", RBT_PRS_VER_MAJOR . "." . RBT_PRS_VER_MINOR . "." .
 	  RBT_PRS_VER_PATCH . "-" . RBT_PRS_BRANCH);
